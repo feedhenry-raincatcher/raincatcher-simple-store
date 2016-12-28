@@ -4,6 +4,7 @@
 const fixtures = require('./fixtures');
 const assert = require('assert');
 const daisyId = 'rJeXyfdrH';
+const mediator = require('fh-wfm-mediator/lib/mediator');
 const newItem = {
   "username" : "jdoe",
   "name" : "John Doe",
@@ -89,6 +90,52 @@ module.exports = function(Store, describeDescription) {
         return this.store.delete('invalid_id').then(function(user) {
           assert.equal(user, null);
         });
+      });
+    });
+
+    describe('#listen', function() {
+      beforeEach(function() {
+        this.store.listen('', mediator);
+      });
+      it('should listen to the create topic', function() {
+        // expected to answer at done:wfm:user:create:testid
+        return this.store.topics.request('create', {id: 'testid', username: 'test'},
+          {uid: 'testid'})
+          .then(function(res) {
+            assert(res);
+            assert.notEqual(res.id, 'testid', 'create() should generate a new id');
+            assert.equal(res.username, 'test');
+          });
+      });
+      it('should listen to the read topic', function() {
+        // expected to answer at done:wfm:user:read:${daisyId}
+        return this.store.topics.request('read', daisyId).then(function(res) {
+          assert.equal(res.username, 'daisy');
+        });
+      });
+      it('should listen to the update topic', function() {
+        // expected to answer at done:wfm:user:update:${daisyId}
+        return this.store.topics.request('update', {id: daisyId, position: 'test'},
+          {uid: daisyId}).then(function(res) {
+            assert.equal(res.username, 'daisy');
+            assert.equal(res.position, 'test');
+          });
+      });
+      it('should listen to the delete topic', function() {
+        // expected to answer at done:wfm:user:delete:${daisyId}
+        return this.store.topics.request('delete', {id: daisyId, position: 'test'},
+          {uid: daisyId}).then(function(res) {
+            assert.equal(res.username, 'daisy');
+          });
+      });
+      it('should listen to the list topic', function() {
+        // expected to answer at done:wfm:user:list
+        return this.store.topics.request('list').then(function(res) {
+          assert.equal(res.length, 8);
+        });
+      });
+      afterEach(function() {
+        this.store.unsubscribe();
       });
     });
 
