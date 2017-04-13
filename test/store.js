@@ -164,6 +164,27 @@ module.exports = function(Store, describeDescription) {
           assert.equal(res.length, 8);
         });
       });
+      it('should listen to the deleteAll topic', function() {
+        var self = this;
+        return self.store.topics.request('deleteAll').then(function() {
+          return self.store.topics.request('list');
+        }).then(function(res) {
+          assert.equal(res.length, 0);
+        });
+      });
+      it('should listen to the reset topic', function() {
+        var self = this;
+        // need uid:null because otherwise mediator.request
+        // grabs the first element of the array as the uid
+        return self.store.topics.request('reset', fixtures, {uid: null})
+        .then(function() {
+          return self.store.topics.request('list');
+        })
+        .then(function(res) {
+          // mongodb adds ObjectId metadata, so just compare ids
+          assert.deepEqual(_.map(res, 'id'), _.map(fixtures, 'id'));
+        });
+      });
       afterEach(function() {
         this.store.unsubscribe();
       });
